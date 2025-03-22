@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type Book struct {
@@ -19,16 +21,17 @@ var books []Book
 
 func main() {
 	books = []Book{}
-	http.HandleFunc("/books", bookHandler)
-	http.HandleFunc("/books/{id}", bookHandler)
+	r := mux.NewRouter()
+	r.HandleFunc("/books", bookHandler).Methods("GET", "POST", "PUT")
+	r.HandleFunc("/books/{id:[0-9]+}", bookHandler).Methods("GET", "DELETE")
 	fmt.Printf("Starting server at port 8080\n")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal(err)
-	}
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
-// TODO Refactor to use gorilla/mux
 func bookHandler(w http.ResponseWriter, r *http.Request) {
+	// w.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
+	// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+	// w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	switch r.Method {
 	//GET http://localhost:8080/books
 	//GET http://localhost:8080/books/1
@@ -38,8 +41,10 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 		var book Book
 		var id int
 
-		if r.PathValue("id") != "" {
-			id, err = strconv.Atoi(r.PathValue("id"))
+		idParam := mux.Vars(r)["id"]
+
+		if idParam != "" {
+			id, err = strconv.Atoi(idParam)
 			if err != nil {
 				http.Error(w, "Error converting id to int", http.StatusInternalServerError)
 				return
@@ -154,12 +159,14 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 
 		//DELETE http://localhost:8080/books/4
 	case "DELETE":
-		if r.PathValue("id") == "" {
+		idParam := mux.Vars(r)["id"]
+
+		if idParam == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		id, err := strconv.Atoi(r.PathValue("id"))
+		id, err := strconv.Atoi(idParam)
 		if err != nil {
 			w.Write([]byte("Id conversion issue" + err.Error()))
 			w.WriteHeader(http.StatusBadRequest)
