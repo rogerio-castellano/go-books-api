@@ -1,0 +1,9 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: ./backend
+    image: books-api:latest
+    container_name: books-api
+    ports:
+      - "8080:8080"
