@@ -66,9 +66,9 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "The provided id is invalid. Please ensure it is a positive integer.", http.StatusBadRequest)
 			return
 		}
-		book, _ = filterById(id)
-		if book.Id == 0 {
-			http.Error(w, "", http.StatusNotFound)
+		book, _, err = filterById(id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
@@ -90,15 +90,13 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(responseJSON)
 }
 
-func filterById(id int) (Book, int) {
-	var i int
-	var book Book
-	for i, book = range books {
+func filterById(id int) (Book, int, error) {
+	for i, book := range books {
 		if book.Id == id {
-			return book, i
+			return book, i, nil
 		}
 	}
-	return Book{}, i
+	return Book{}, -1, fmt.Errorf("Book with id %d not found", id)
 }
 
 func handlePostBook(w http.ResponseWriter, r *http.Request) {
@@ -168,10 +166,9 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	book, i := filterById(bookToUpdate.Id)
-	if book.Id == 0 {
-		// w.WriteHeader(http.StatusNotFound)
-		http.Error(w, "", http.StatusNotFound)
+	book, i, err := filterById(bookToUpdate.Id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 
 		return
 	}
@@ -223,9 +220,9 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	book, i := filterById(id)
-	if book.Id == 0 {
-		http.Error(w, "", http.StatusNotFound)
+	_, i, err := filterById(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
