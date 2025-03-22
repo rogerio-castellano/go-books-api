@@ -109,13 +109,13 @@ func handlePostBook(w http.ResponseWriter, r *http.Request) {
 			"Pages" : 556
 		}
 	*/
-	//TODO validate input
 	var newBook Book
 	err := json.NewDecoder(r.Body).Decode(&newBook)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	newBook.Id = len(books) + 1
 	books = append(books, newBook)
 
@@ -132,6 +132,13 @@ func handlePostBook(w http.ResponseWriter, r *http.Request) {
 	// Write the JSON response
 	_, _ = w.Write(responseJSON)
 
+}
+
+func validateBook(book Book) bool {
+	if book.Title == "" || book.Author == "" || book.Pages <= 0 {
+		return false
+	}
+	return true
 }
 
 func handlePutBook(w http.ResponseWriter, r *http.Request) {
@@ -155,7 +162,7 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
+	
 	book, i := filterById(bookToUpdate.Id)
 	if book.Id == 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -172,6 +179,11 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 
 	if bookToUpdate.Pages != 0 {
 		book.Pages = bookToUpdate.Pages
+	}
+
+	if !validateBook(book) {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
 	}
 
 	books[i] = book
@@ -204,6 +216,7 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	book, i := filterById(id)
 	if book.Id == 0 {
 		w.WriteHeader(http.StatusNotFound)
