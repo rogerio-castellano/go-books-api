@@ -33,155 +33,61 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 	// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
 	// w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	switch r.Method {
+	case "GET":
+		handleGetBooks(w, r)
+
+	case "POST":
+		handlePostBook(w, r)
+
+	case "PUT":
+		handlePutBook(w, r)
+
+	case "DELETE":
+		handleDeleteBook(w, r)
+
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 	//GET http://localhost:8080/books
 	//GET http://localhost:8080/books/1
-	case "GET":
-		var responseJSON []byte
-		var err error
-		var book Book
-		var id int
+	var responseJSON []byte
+	var err error
+	var book Book
+	var id int
 
-		idParam := mux.Vars(r)["id"]
+	idParam := mux.Vars(r)["id"]
 
-		if idParam != "" {
-			id, err = strconv.Atoi(idParam)
-			if err != nil {
-				http.Error(w, "Error converting id to int", http.StatusInternalServerError)
-				return
-			}
-			book, _ = filterById(id)
-			if book.Id == 0 {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-
-			responseJSON, err = json.Marshal(book)
-
-		} else {
-			responseJSON, err = json.Marshal(books)
-		}
-
+	if idParam != "" {
+		id, err = strconv.Atoi(idParam)
 		if err != nil {
-			http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+			http.Error(w, "Error converting id to int", http.StatusInternalServerError)
 			return
 		}
-
-		// Set the appropriate headers
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
-		_, _ = w.Write(responseJSON)
-
-	/* POST http://localhost:8080/books
-	body	{
-			"Title" : "Head First Go",
-			"Author" : "Jay McGavren",
-			"Pages" : 556
-		}
-	*/
-	case "POST":
-		//TODO validate input
-		var newBook Book
-		err := json.NewDecoder(r.Body).Decode(&newBook)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		newBook.Id = len(books) + 1
-		books = append(books, newBook)
-
-		responseJSON, err := json.Marshal(newBook)
-		if err != nil {
-			http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
-			return
-		}
-
-		// Set the appropriate headers
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
-		// Write the JSON response
-		_, _ = w.Write(responseJSON)
-
-	/*PUT http://localhost:8080/books
-	body	{
-				"Id" : 2,
-				"Title" : "The Go Programming Language",
-				"Author" : "Alan Donovan,Brian Kernighan",
-				"Pages" : 400
-			}
-	*/
-	case "PUT":
-		//TODO validate input
-		var bookToUpdate Book
-		err := json.NewDecoder(r.Body).Decode(&bookToUpdate)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		if bookToUpdate.Id == 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		book, i := filterById(bookToUpdate.Id)
+		book, _ = filterById(id)
 		if book.Id == 0 {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		if bookToUpdate.Title != "" {
-			book.Title = bookToUpdate.Title
-		}
+		responseJSON, err = json.Marshal(book)
 
-		if bookToUpdate.Author != "" {
-			book.Author = bookToUpdate.Author
-		}
-
-		if bookToUpdate.Pages != 0 {
-			book.Pages = bookToUpdate.Pages
-		}
-
-		books[i] = book
-		responseJSON, err := json.Marshal(book)
-		if err != nil {
-			http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
-			return
-		}
-
-		// Set the appropriate headers
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
-		// Write the JSON response
-		_, _ = w.Write(responseJSON)
-
-		//DELETE http://localhost:8080/books/4
-	case "DELETE":
-		idParam := mux.Vars(r)["id"]
-
-		if idParam == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		id, err := strconv.Atoi(idParam)
-		if err != nil {
-			w.Write([]byte("Id conversion issue" + err.Error()))
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		book, i := filterById(id)
-		if book.Id == 0 {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		//Delete book keeping original order
-		books = append(books[:i], books[i+1:]...)
-		w.WriteHeader(http.StatusNoContent)
+	} else {
+		responseJSON, err = json.Marshal(books)
 	}
+
+	if err != nil {
+		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the appropriate headers
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	_, _ = w.Write(responseJSON)
 }
 
 func filterById(id int) (Book, int) {
@@ -193,4 +99,118 @@ func filterById(id int) (Book, int) {
 		}
 	}
 	return Book{}, i
+}
+
+func handlePostBook(w http.ResponseWriter, r *http.Request) {
+	/* POST http://localhost:8080/books
+	body	{
+			"Title" : "Head First Go",
+			"Author" : "Jay McGavren",
+			"Pages" : 556
+		}
+	*/
+	//TODO validate input
+	var newBook Book
+	err := json.NewDecoder(r.Body).Decode(&newBook)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	newBook.Id = len(books) + 1
+	books = append(books, newBook)
+
+	responseJSON, err := json.Marshal(newBook)
+	if err != nil {
+		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the appropriate headers
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// Write the JSON response
+	_, _ = w.Write(responseJSON)
+
+}
+
+func handlePutBook(w http.ResponseWriter, r *http.Request) {
+	/*PUT http://localhost:8080/books
+	body	{
+				"Id" : 2,
+				"Title" : "The Go Programming Language",
+				"Author" : "Alan Donovan,Brian Kernighan",
+				"Pages" : 400
+			}
+	*/
+	//TODO validate input
+	var bookToUpdate Book
+	err := json.NewDecoder(r.Body).Decode(&bookToUpdate)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if bookToUpdate.Id == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	book, i := filterById(bookToUpdate.Id)
+	if book.Id == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if bookToUpdate.Title != "" {
+		book.Title = bookToUpdate.Title
+	}
+
+	if bookToUpdate.Author != "" {
+		book.Author = bookToUpdate.Author
+	}
+
+	if bookToUpdate.Pages != 0 {
+		book.Pages = bookToUpdate.Pages
+	}
+
+	books[i] = book
+	responseJSON, err := json.Marshal(book)
+	if err != nil {
+		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the appropriate headers
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// Write the JSON response
+	_, _ = w.Write(responseJSON)
+}
+
+func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
+	//DELETE http://localhost:8080/books/4
+	idParam := mux.Vars(r)["id"]
+
+	if idParam == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		w.Write([]byte("Id conversion issue" + err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	book, i := filterById(id)
+	if book.Id == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	//Delete book keeping original order
+	books = append(books[:i], books[i+1:]...)
+	w.WriteHeader(http.StatusNoContent)
 }
