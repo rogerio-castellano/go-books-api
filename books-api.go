@@ -23,7 +23,7 @@ func main() {
 	books = []Book{}
 	r := mux.NewRouter()
 	r.HandleFunc("/books", bookHandler).Methods("GET", "POST", "PUT")
-	r.HandleFunc("/books/{id:[0-9]+}", bookHandler).Methods("GET", "DELETE")
+	r.HandleFunc("/books/{id}", bookHandler).Methods("GET", "DELETE")
 	fmt.Printf("Starting server at port 8080\n")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -63,12 +63,12 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 	if idParam != "" {
 		id, err = strconv.Atoi(idParam)
 		if err != nil {
-			http.Error(w, "Error converting id to int", http.StatusInternalServerError)
+			http.Error(w, "The provided id is invalid. Please ensure it is a positive integer.", http.StatusBadRequest)
 			return
 		}
 		book, _ = filterById(id)
 		if book.Id == 0 {
-			w.WriteHeader(http.StatusNotFound)
+			http.Error(w, "", http.StatusNotFound)
 			return
 		}
 
@@ -116,12 +116,17 @@ func handlePostBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !validateBook(newBook) {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
 	newBook.Id = len(books) + 1
 	books = append(books, newBook)
 
 	responseJSON, err := json.Marshal(newBook)
 	if err != nil {
-		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		http.Error(w, "Error encoding JSON", http.StatusBadRequest)
 		return
 	}
 
@@ -159,13 +164,15 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if bookToUpdate.Id == 0 {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "The id was not provided.", http.StatusBadRequest)
 		return
 	}
-	
+
 	book, i := filterById(bookToUpdate.Id)
 	if book.Id == 0 {
-		w.WriteHeader(http.StatusNotFound)
+		// w.WriteHeader(http.StatusNotFound)
+		http.Error(w, "", http.StatusNotFound)
+
 		return
 	}
 
@@ -206,20 +213,19 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 	idParam := mux.Vars(r)["id"]
 
 	if idParam == "" {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		w.Write([]byte("Id conversion issue" + err.Error()))
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "The provided id is invalid. Please ensure it is a positive integer.", http.StatusBadRequest)
 		return
 	}
 
 	book, i := filterById(id)
 	if book.Id == 0 {
-		w.WriteHeader(http.StatusNotFound)
+		http.Error(w, "", http.StatusNotFound)
 		return
 	}
 
