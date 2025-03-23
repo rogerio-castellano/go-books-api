@@ -21,7 +21,9 @@ var books []Book
 
 func main() {
 	books = []Book{}
+	
 	r := mux.NewRouter()
+	r.HandleFunc("/books/", bookHandler).Methods("GET")
 	r.HandleFunc("/books", bookHandler).Methods("GET", "POST", "PUT")
 	r.HandleFunc("/books/{id}", bookHandler).Methods("GET", "DELETE")
 	fmt.Printf("Starting server at port 8080\n")
