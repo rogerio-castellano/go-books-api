@@ -1,0 +1,13 @@
+# Use a Node.js image for building the React app
+FROM node:23-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Use an NGINX image to serve static files
+FROM nginx:stable-alpine AS production
+COPY --from=build /app/build /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
