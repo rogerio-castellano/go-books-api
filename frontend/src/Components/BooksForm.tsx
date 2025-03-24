@@ -1,5 +1,3 @@
-import React from "react";
-
 export const BooksForm = () => {
   return (
     <section id="book-form">
