@@ -23,17 +23,16 @@ func main() {
 	books = []Book{}
 	
 	r := mux.NewRouter()
-	r.HandleFunc("/books", bookHandler).Methods("GET", "POST", "PUT")
-	r.HandleFunc("/books/", bookHandler).Methods("GET", "POST", "PUT")
-	r.HandleFunc("/books/{id}", bookHandler).Methods("GET", "DELETE")
+	r.Use(corsMiddleware)
+
+	r.HandleFunc("/books", bookHandler).Methods("GET", "POST", "PUT", "OPTIONS")
+	r.HandleFunc("/books/", bookHandler).Methods("GET", "POST", "PUT", "OPTIONS")
+	r.HandleFunc("/books/{id}", bookHandler).Methods("GET", "DELETE", "PUT", "OPTIONS")
 	fmt.Printf("Starting server at port 8080\n")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
 func bookHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	switch r.Method {
 	case "GET":
 		handleGetBooks(w, r)
@@ -129,14 +128,12 @@ func handlePostBook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error encoding JSON", http.StatusBadRequest)
 		return
 	}
-
 	// Set the appropriate headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	// Write the JSON response
 	_, _ = w.Write(responseJSON)
-
 }
 
 func validateBook(book Book) bool {
@@ -231,4 +228,22 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 	//Delete book keeping original order
 	books = append(books[:i], books[i+1:]...)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// CORS Middleware
+func corsMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // Allow the origin of your frontend
+        w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+        // Allow specific headers
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+        // Allow specific methods
+        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        // Handle preflight requests
+        if r.Method == "OPTIONS" {
+            w.WriteHeader(http.StatusNoContent)
+            return
+        }
+        next.ServeHTTP(w, r)
+    })
 }
