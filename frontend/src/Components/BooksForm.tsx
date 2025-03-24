@@ -24,8 +24,13 @@ export const BooksForm = ({ onSubmittedBook }: Props) => {
         <input type="text" id="author" placeholder="Enter author's name" required {...register("author")} />
 
         <label htmlFor="pages">Pages:</label>
-        <input type="number" id="pages" placeholder="Enter page count" required {...register("pages")} />
-
+        <input
+          type="number"
+          id="pages"
+          placeholder="Enter page count"
+          required
+          {...register("pages", { valueAsNumber: true })}
+        />
         <button type="submit">Add Book</button>
       </form>
     </section>
