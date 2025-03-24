@@ -2,17 +2,18 @@ import "./App.css";
 import Book from "./Book.model";
 import { BooksForm } from "./Components/BooksForm";
 import { BooksList } from "./Components/BooksList";
-import { useState } from "react";
-
-const initialBooks: Book[] = [
-  { id: 1, title: "The Go Programming Language", author: "Alan Donovan", pages: 400 },
-  { id: 2, title: "Clean Code", author: "Robert C. Martin", pages: 464 },
-  { id: 3, title: "You Don't Know JS", author: "Kyle Simpson", pages: 278 },
-  { id: 4, title: "Design Patterns", author: "Erich Gamma", pages: 395 },
-];
+import { useState, useEffect } from "react";
 
 function App() {
-  const [books, setBooks] = useState<Book[]>(initialBooks);
+  const [books, setBooks] = useState<Book[]>([]);
+
+  useEffect(() => {
+    const initializeBooks = async () => {
+      const fetchedBooks = await fetchBooks();
+      setBooks(fetchedBooks);
+    };
+    initializeBooks();
+  }, []);
 
   function addBook(book: Book): void {
     books.push(book);
@@ -29,5 +30,26 @@ function App() {
     </div>
   );
 }
+
+const apiUrl: string = "http://localhost:8081/api/books";
+
+// Fetch books from the API
+const fetchBooks = async (): Promise<Book[]> => {
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const books: Book[] = await response.json();
+    console.log("Books fetched successfully:", books);
+    books.forEach((book) => {
+      console.log(`Title: ${book.title}, Author: ${book.author}, Pages: ${book.pages}`);
+    });
+    return books;
+  } catch (error) {
+    console.error("Error fetching books:", error);
+    return [];
+  }
+};
 
 export default App;
