@@ -73,7 +73,7 @@ function App() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      setBooks(books.filter((book) => book.id !== bookId));
+      setBooks(await getBooks());
       console.log("Book deleted successfully!");
     } catch (error) {
       console.error("Error attempting to delete book:", error);
