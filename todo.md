@@ -36,3 +36,8 @@
 - [ ] Improve architecture
 
   - Create services.
+
+- [ ] Build containers health check
+
+- [ ] Handle errors
+  - Handle main errors (including currently disregarded with \_ ) analyzing who (the caller or the called) should raise it, according to the situation (the caller can workaround it or not?)
