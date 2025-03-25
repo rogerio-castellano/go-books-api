@@ -218,8 +218,12 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Delete book keeping original order
-	// books = append(books[:i], books[i+1:]...)
+	err = deleteBook(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -314,8 +318,19 @@ func updateBook(book Book) error {
 
 	query := `UPDATE books SET title = $1, author = $2, pages = $3 WHERE id = $4`
 	fmt.Println(query)
-	result, err := db.Exec(query, book.Title, book.Author, book.Pages, book.Id)
-	fmt.Println("Update result.RowsAffected", result.RowsAffected)
+	_, err := db.Exec(query, book.Title, book.Author, book.Pages, book.Id)
+	
+	return err
+}
+
+func deleteBook(id int) error {
+	db := getDbConnection()
+	defer db.Close()
+
+	query := `DELETE FROM books WHERE id = $1`
+	
+	fmt.Println(id, query)
+	_, err := db.Exec(query, id)
 	return err
 }
 
