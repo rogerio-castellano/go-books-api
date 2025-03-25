@@ -2,9 +2,11 @@ import Book from "../Book.model";
 
 interface Props {
   books: Book[];
+  onDelete: (id: number) => void;
+  onEdit: (book: Book) => void;
 }
 
-export const BooksList = ({ books }: Props) => {
+export const BooksList = ({ books, onEdit, onDelete }: Props) => {
   return (
     <section id="book-list">
       <h2>Book List</h2>
@@ -26,8 +28,12 @@ export const BooksList = ({ books }: Props) => {
               <td>{book.author}</td>
               <td>{book.pages}</td>
               <td>
-                <button>Edit</button>
-                <button>Delete</button>
+                <button className="edit" onClick={() => onEdit(book)}>
+                  Edit
+                </button>
+                <button className="delete" onClick={() => onDelete(book.id)}>
+                  Delete
+                </button>
               </td>
             </tr>
           ))}

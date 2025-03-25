@@ -2,10 +2,10 @@ import Book from "../Book.model";
 import { useForm } from "react-hook-form";
 
 interface Props {
-  onSubmittedBook: (book: Book) => void;
+  onSubmit: (book: Book) => void;
 }
 
-export const BooksForm = ({ onSubmittedBook }: Props) => {
+export const BooksForm = ({ onSubmit: onSubmittedBook }: Props) => {
   const { register, handleSubmit, reset } = useForm<Book>();
 
   return (

@@ -141,14 +141,12 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 				"Pages" : 400
 			}
 	*/
-	//TODO validate input
 	var bookToUpdate Book
 	err := json.NewDecoder(r.Body).Decode(&bookToUpdate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	if bookToUpdate.Id == 0 {
 		http.Error(w, "The id was not provided.", http.StatusBadRequest)
 		return
@@ -230,16 +228,13 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Allow the origin of your frontend
-		// allowedOrigins := map[string]bool{
-		//     "http://example.com":       true,
-		//     "http://anotherexample.com": true,
-		// }
+		allowedOrigins := map[string]bool{
+		    "http://localhost:3000":       true,
+		}
 		origin := r.Header.Get("Origin")
-		// if allowedOrigins[origin] {
-		//     w.Header().Set("Access-Control-Allow-Origin", origin)
-		// }
-		fmt.Println(origin)
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if allowedOrigins[origin] {
+		    w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 		// Allow specific headers
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		// Allow specific methods
@@ -317,7 +312,6 @@ func updateBook(book Book) error {
 	defer db.Close()
 
 	query := `UPDATE books SET title = $1, author = $2, pages = $3 WHERE id = $4`
-	fmt.Println(query)
 	_, err := db.Exec(query, book.Title, book.Author, book.Pages, book.Id)
 	
 	return err
@@ -335,8 +329,7 @@ func deleteBook(id int) error {
 }
 
 func getDbConnection() *sql.DB {
-	connStr := "postgres://postgres:example@books-db:5432/postgres?sslmode=disable"
-	// connStr := "host=books-db dbname=postgres user=postgres password=example sslmode=disable"
+	connStr := "postgres://postgres:example@books-db:5432/postgres?sslmode=disable&connect_timeout=10&application_name=books-api"
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
