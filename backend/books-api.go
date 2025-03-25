@@ -177,7 +177,12 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// books[i] = book
+	err = updateBook(book)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	responseJSON, err := json.Marshal(book)
 	if err != nil {
 		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
@@ -301,6 +306,17 @@ func insertBook(book Book) (int, error) {
 	}
 	fmt.Println(newBookID)
 	return newBookID, nil
+}
+
+func updateBook(book Book) error {
+	db := getDbConnection()
+	defer db.Close()
+
+	query := `UPDATE books SET title = $1, author = $2, pages = $3 WHERE id = $4`
+	fmt.Println(query)
+	result, err := db.Exec(query, book.Title, book.Author, book.Pages, book.Id)
+	fmt.Println("Update result.RowsAffected", result.RowsAffected)
+	return err
 }
 
 func getDbConnection() *sql.DB {
