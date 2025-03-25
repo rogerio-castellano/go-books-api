@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 type Book struct {
@@ -20,8 +22,25 @@ type Book struct {
 var books []Book
 
 func main() {
-	books = []Book{}
-	
+	connStr := "postgres://postgres:example@books-db:5432/postgres?sslmode=disable"
+	// connStr := "host=books-db dbname=postgres user=postgres password=example sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatalf("Unable to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	// Test the database connection
+	err = db.Ping()
+	if err != nil {
+		log.Fatalf("Unable to ping database: %v", err)
+	}
+	fmt.Println("Connected to database successfully!")
+
+	// books = []Book{}
+	books, _ := getBooks(db)
+	fmt.Println(books2)
+
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
 
@@ -230,20 +249,39 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// CORS Middleware
 func corsMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        // Allow the origin of your frontend
-        w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-        // Allow specific headers
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-        // Allow specific methods
-        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-        // Handle preflight requests
-        if r.Method == "OPTIONS" {
-            w.WriteHeader(http.StatusNoContent)
-            return
-        }
-        next.ServeHTTP(w, r)
-    })
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Allow the origin of your frontend
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		// Allow specific headers
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		// Allow specific methods
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func getBooks(db *sql.DB) ([]Book, error) {
+	query := `SELECT id, title, author, pages FROM books`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var books []Book
+	for rows.Next() {
+		var book Book
+		err := rows.Scan(&book.Id, &book.Title, &book.Author, &book.Pages)
+		if err != nil {
+			return nil, err
+		}
+		books = append(books, book)
+	}
+	return books, nil
 }
