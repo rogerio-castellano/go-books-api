@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq" // PostgreSQL driver
@@ -19,27 +20,7 @@ type Book struct {
 	Pages  int    `json:"pages"`
 }
 
-var books []Book
-
 func main() {
-	connStr := "postgres://postgres:example@books-db:5432/postgres?sslmode=disable"
-	// connStr := "host=books-db dbname=postgres user=postgres password=example sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v", err)
-	}
-	defer db.Close()
-
-	// Test the database connection
-	err = db.Ping()
-	if err != nil {
-		log.Fatalf("Unable to ping database: %v", err)
-	}
-	fmt.Println("Connected to database successfully!")
-
-	// books = []Book{}
-	books, _ := getBooks(db)
-	fmt.Println(books2)
 
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
@@ -75,7 +56,6 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 	//GET http://localhost:8080/books/1
 	var responseJSON []byte
 	var err error
-	var book Book
 	var id int
 
 	idParam := mux.Vars(r)["id"]
@@ -86,8 +66,8 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "The provided id is invalid. Please ensure it is a positive integer.", http.StatusBadRequest)
 			return
 		}
-		book, _, err = filterById(id)
-		if err != nil {
+		book, ok := getBookById(id)
+		if !ok {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
@@ -95,6 +75,7 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 		responseJSON, err = json.Marshal(book)
 
 	} else {
+		books, _ := getBooks()
 		responseJSON, err = json.Marshal(books)
 	}
 
@@ -108,15 +89,6 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	_, _ = w.Write(responseJSON)
-}
-
-func filterById(id int) (Book, int, error) {
-	for i, book := range books {
-		if book.Id == id {
-			return book, i, nil
-		}
-	}
-	return Book{}, -1, fmt.Errorf("Book with id %d not found", id)
 }
 
 func handlePostBook(w http.ResponseWriter, r *http.Request) {
@@ -139,8 +111,13 @@ func handlePostBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newBook.Id = len(books) + 1
-	books = append(books, newBook)
+	newBookId, err := insertBook(newBook)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	newBook.Id = newBookId
 
 	responseJSON, err := json.Marshal(newBook)
 	if err != nil {
@@ -153,13 +130,6 @@ func handlePostBook(w http.ResponseWriter, r *http.Request) {
 
 	// Write the JSON response
 	_, _ = w.Write(responseJSON)
-}
-
-func validateBook(book Book) bool {
-	if book.Title == "" || book.Author == "" || book.Pages <= 0 {
-		return false
-	}
-	return true
 }
 
 func handlePutBook(w http.ResponseWriter, r *http.Request) {
@@ -184,8 +154,8 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	book, i, err := filterById(bookToUpdate.Id)
-	if err != nil {
+	book, ok := getBookById(bookToUpdate.Id)
+	if !ok {
 		http.Error(w, err.Error(), http.StatusNotFound)
 
 		return
@@ -208,7 +178,7 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	books[i] = book
+	// books[i] = book
 	responseJSON, err := json.Marshal(book)
 	if err != nil {
 		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
@@ -238,21 +208,30 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, i, err := filterById(id)
-	if err != nil {
+	_, ok := getBookById(id)
+	if !ok {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
 	//Delete book keeping original order
-	books = append(books[:i], books[i+1:]...)
+	// books = append(books[:i], books[i+1:]...)
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Allow the origin of your frontend
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		// allowedOrigins := map[string]bool{
+		//     "http://example.com":       true,
+		//     "http://anotherexample.com": true,
+		// }
+		origin := r.Header.Get("Origin")
+		// if allowedOrigins[origin] {
+		//     w.Header().Set("Access-Control-Allow-Origin", origin)
+		// }
+		fmt.Println(origin)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		// Allow specific headers
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		// Allow specific methods
@@ -266,7 +245,10 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func getBooks(db *sql.DB) ([]Book, error) {
+func getBooks() ([]Book, error) {
+	db := getDbConnection()
+	defer db.Close()
+
 	query := `SELECT id, title, author, pages FROM books`
 	rows, err := db.Query(query)
 	if err != nil {
@@ -274,7 +256,8 @@ func getBooks(db *sql.DB) ([]Book, error) {
 	}
 	defer rows.Close()
 
-	var books []Book
+	var books = make([]Book, 0)
+
 	for rows.Next() {
 		var book Book
 		err := rows.Scan(&book.Id, &book.Title, &book.Author, &book.Pages)
@@ -284,4 +267,63 @@ func getBooks(db *sql.DB) ([]Book, error) {
 		books = append(books, book)
 	}
 	return books, nil
+}
+
+func getBookById(id int) (Book, bool) {
+	return Book{}, true
+}
+
+func insertBook(book Book) (int, error) {
+	var newBookID int
+
+	db := getDbConnection()
+	defer db.Close()
+
+	query := `INSERT INTO books (title, author, pages) VALUES ($1, $2, $3) RETURNING id`
+	err := db.QueryRow(query, book.Title, book.Author, book.Pages).Scan(&newBookID)
+	if err != nil {
+		return 0, err
+	}
+	fmt.Println(newBookID)
+	return newBookID, nil
+}
+
+func getDbConnection() *sql.DB {
+	connStr := "postgres://postgres:example@books-db:5432/postgres?sslmode=disable"
+	// connStr := "host=books-db dbname=postgres user=postgres password=example sslmode=disable"
+
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatalf("Unable to connect to database: %v", err)
+	}
+
+	// Test the database connection
+	for retries := 5; retries > 0; retries-- {
+		err = db.Ping()
+		if err == nil {
+			break
+		}
+		log.Println("Waiting for database to be ready...")
+		time.Sleep(2 * time.Second)
+	}
+	if err != nil {
+		log.Fatalf("Unable to ping database: %v", err)
+	}
+	return db
+}
+
+// func filterById(id int) (Book, int, error) {
+// 	for i, book := range books {
+// 		if book.Id == id {
+// 			return book, i, nil
+// 		}
+// 	}
+// 	return Book{}, -1, fmt.Errorf("Book with id %d not found", id)
+// }
+
+func validateBook(book Book) bool {
+	if book.Title == "" || book.Author == "" || book.Pages <= 0 {
+		return false
+	}
+	return true
 }
