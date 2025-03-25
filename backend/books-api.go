@@ -68,7 +68,7 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 		}
 		book, ok := getBookById(id)
 		if !ok {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, "The requested book id could not be found.", http.StatusNotFound)
 			return
 		}
 
@@ -156,8 +156,7 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 
 	book, ok := getBookById(bookToUpdate.Id)
 	if !ok {
-		http.Error(w, err.Error(), http.StatusNotFound)
-
+		http.Error(w, "The requested book id could not be found.", http.StatusNotFound)
 		return
 	}
 
@@ -210,7 +209,7 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 
 	_, ok := getBookById(id)
 	if !ok {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, "The requested book id could not be found.", http.StatusNotFound)
 		return
 	}
 
@@ -270,7 +269,23 @@ func getBooks() ([]Book, error) {
 }
 
 func getBookById(id int) (Book, bool) {
-	return Book{}, true
+
+	db := getDbConnection()
+	defer db.Close()
+
+	var book Book
+	query := `SELECT id, title, author, pages FROM books WHERE id = $1`
+	row := db.QueryRow(query, id)
+	err := row.Scan(&book.Id, &book.Title, &book.Author, &book.Pages)
+
+	switch err {
+	case nil:
+		return book, true
+	case sql.ErrNoRows:
+		return Book{}, false
+	default:
+		panic(err)
+	}
 }
 
 func insertBook(book Book) (int, error) {
@@ -311,15 +326,6 @@ func getDbConnection() *sql.DB {
 	}
 	return db
 }
-
-// func filterById(id int) (Book, int, error) {
-// 	for i, book := range books {
-// 		if book.Id == id {
-// 			return book, i, nil
-// 		}
-// 	}
-// 	return Book{}, -1, fmt.Errorf("Book with id %d not found", id)
-// }
 
 func validateBook(book Book) bool {
 	if book.Title == "" || book.Author == "" || book.Pages <= 0 {
