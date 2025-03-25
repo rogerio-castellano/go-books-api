@@ -303,7 +303,6 @@ func insertBook(book Book) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println(newBookID)
 	return newBookID, nil
 }
 
@@ -322,8 +321,6 @@ func deleteBook(id int) error {
 	defer db.Close()
 
 	query := `DELETE FROM books WHERE id = $1`
-	
-	fmt.Println(id, query)
 	_, err := db.Exec(query, id)
 	return err
 }
