@@ -37,7 +37,7 @@ func main() {
 	r.HandleFunc("/books", handlePostBook).Methods("POST")
 	r.HandleFunc("/books", handlePutBook).Methods("PUT")
 	r.HandleFunc("/books/", handleGetBooks).Methods("GET")
-	r.HandleFunc("/books/{id}", handleGetBooks).Methods("GET")
+	r.HandleFunc("/books/{id}", handleGetBookById).Methods("GET")
 	r.HandleFunc("/books/{id}", handleDeleteBook).Methods("DELETE")
 
    // Ensure database is closed on program exit
@@ -47,23 +47,28 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
-func CloseDatabaseOnProgramExit() {
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-quit
-		if db != nil {
-			db.Close()
-			fmt.Println("Closing database connection...")
-		}
-		os.Exit(0) // Gracefully exit
-	}()
-}
-
-
-
 func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 	//GET http://localhost:8080/books
+	//GET http://localhost:8080/books/
+	var responseJSON []byte
+	var err error
+
+	books, _ := getBooks()
+	responseJSON, err = json.Marshal(books)
+
+	if err != nil {
+		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the appropriate headers
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	_, _ = w.Write(responseJSON)
+}
+
+func handleGetBookById(w http.ResponseWriter, r *http.Request) {
 	//GET http://localhost:8080/books/1
 	var responseJSON []byte
 	var err error
@@ -71,7 +76,10 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 
 	idParam := mux.Vars(r)["id"]
 
-	if idParam != "" {
+	if idParam == "" {
+		http.Error(w, "The id was not provided.", http.StatusBadRequest)
+		return
+	} else {
 		id, err = strconv.Atoi(idParam)
 		if err != nil {
 			http.Error(w, "The provided id is invalid. Please ensure it is a positive integer.", http.StatusBadRequest)
@@ -85,9 +93,6 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 
 		responseJSON, err = json.Marshal(book)
 
-	} else {
-		books, _ := getBooks()
-		responseJSON, err = json.Marshal(books)
 	}
 
 	if err != nil {
@@ -101,6 +106,7 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 
 	_, _ = w.Write(responseJSON)
 }
+
 
 func handlePostBook(w http.ResponseWriter, r *http.Request) {
 	/* POST http://localhost:8080/books
@@ -362,4 +368,17 @@ func validateBook(book Book) bool {
 		return false
 	}
 	return true
+}
+
+func CloseDatabaseOnProgramExit() {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-quit
+		if db != nil {
+			db.Close()
+			fmt.Println("Closing database connection...")
+		}
+		os.Exit(0) // Gracefully exit
+	}()
 }
