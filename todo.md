@@ -13,6 +13,12 @@
 
   - Ensure all responses use appropriate HTTP status codes (e.g., 201 Created for successful POST).
 
+- [ ] Set connection string and data repository in environment variables
+
+- [ ] Add MongoDB, RabbitMQ and Redis
+
+- [ ] Add application in Azure
+
 - [ ] Add Unit Tests
 
   - Write unit tests for each handler function to ensure correctness and prevent regressions.
