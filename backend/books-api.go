@@ -6,12 +6,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
+
+var db *sql.DB
 
 type Book struct {
 	Id     int    `json:"id"`
@@ -20,16 +25,36 @@ type Book struct {
 	Pages  int    `json:"pages"`
 }
 
-func main() {
+func init() {
+	db = openDbConnection()
+}
 
+func main() {
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
 
 	r.HandleFunc("/books", bookHandler).Methods("GET", "POST", "PUT", "OPTIONS")
 	r.HandleFunc("/books/", bookHandler).Methods("GET", "POST", "PUT", "OPTIONS")
 	r.HandleFunc("/books/{id}", bookHandler).Methods("GET", "DELETE", "PUT", "OPTIONS")
+
+   // Ensure database is closed on program exit
+    CloseDatabaseOnProgramExit()
+
 	fmt.Printf("Starting server at port 8080\n")
 	log.Fatal(http.ListenAndServe(":8080", r))
+}
+
+func CloseDatabaseOnProgramExit() {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-quit
+		if db != nil {
+			db.Close()
+			fmt.Println("Closing database connection...")
+		}
+		os.Exit(0) // Gracefully exit
+	}()
 }
 
 func bookHandler(w http.ResponseWriter, r *http.Request) {
@@ -226,10 +251,10 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
+	db = openDbConnection()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Allow the origin of your frontend
 		allowedOrigins := map[string]bool{
-		    "http://localhost:3000":       true,
+		    "http://localhost:3000": true,
 		}
 		origin := r.Header.Get("Origin")
 		if allowedOrigins[origin] {
@@ -249,9 +274,6 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func getBooks() ([]Book, error) {
-	db := getDbConnection()
-	defer db.Close()
-
 	query := `SELECT id, title, author, pages FROM books`
 	rows, err := db.Query(query)
 	if err != nil {
@@ -273,10 +295,6 @@ func getBooks() ([]Book, error) {
 }
 
 func getBookById(id int) (Book, bool) {
-
-	db := getDbConnection()
-	defer db.Close()
-
 	var book Book
 	query := `SELECT id, title, author, pages FROM books WHERE id = $1`
 	row := db.QueryRow(query, id)
@@ -294,10 +312,6 @@ func getBookById(id int) (Book, bool) {
 
 func insertBook(book Book) (int, error) {
 	var newBookID int
-
-	db := getDbConnection()
-	defer db.Close()
-
 	query := `INSERT INTO books (title, author, pages) VALUES ($1, $2, $3) RETURNING id`
 	err := db.QueryRow(query, book.Title, book.Author, book.Pages).Scan(&newBookID)
 	if err != nil {
@@ -307,9 +321,6 @@ func insertBook(book Book) (int, error) {
 }
 
 func updateBook(book Book) error {
-	db := getDbConnection()
-	defer db.Close()
-
 	query := `UPDATE books SET title = $1, author = $2, pages = $3 WHERE id = $4`
 	_, err := db.Exec(query, book.Title, book.Author, book.Pages, book.Id)
 	
@@ -317,17 +328,18 @@ func updateBook(book Book) error {
 }
 
 func deleteBook(id int) error {
-	db := getDbConnection()
-	defer db.Close()
-
 	query := `DELETE FROM books WHERE id = $1`
 	_, err := db.Exec(query, id)
 	return err
 }
 
-func getDbConnection() *sql.DB {
-	connStr := "postgres://postgres:example@books-db:5432/postgres?sslmode=disable&connect_timeout=10&application_name=books-api"
+func openDbConnection() *sql.DB {
+	if(db != nil && !isDBClosed(db)) {
+		return db
+	}
 
+	var db *sql.DB
+	connStr := "postgres://postgres:example@books-db:5432/postgres?sslmode=disable&connect_timeout=10&application_name=books-api"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v", err)
@@ -346,6 +358,17 @@ func getDbConnection() *sql.DB {
 		log.Fatalf("Unable to ping database: %v", err)
 	}
 	return db
+}
+
+func isDBClosed(db *sql.DB) bool {
+    err := db.Ping()
+    if err != nil {
+        if err == sql.ErrConnDone {
+            return true
+        }
+        fmt.Printf("An error occurred: %v\n", err)
+    } 
+    return false
 }
 
 func validateBook(book Book) bool {
