@@ -137,7 +137,7 @@ func handlePostBook(w http.ResponseWriter, r *http.Request) {
 	}
 	// Set the appropriate headers
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 
 	// Write the JSON response
 	_, _ = w.Write(responseJSON)
