@@ -33,9 +33,12 @@ func main() {
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
 
-	r.HandleFunc("/books", bookHandler).Methods("GET", "POST", "PUT", "OPTIONS")
-	r.HandleFunc("/books/", bookHandler).Methods("GET", "POST", "PUT", "OPTIONS")
-	r.HandleFunc("/books/{id}", bookHandler).Methods("GET", "DELETE", "PUT", "OPTIONS")
+	r.HandleFunc("/books", handleGetBooks).Methods("GET")
+	r.HandleFunc("/books", handlePostBook).Methods("POST")
+	r.HandleFunc("/books", handlePutBook).Methods("PUT")
+	r.HandleFunc("/books/", handleGetBooks).Methods("GET")
+	r.HandleFunc("/books/{id}", handleGetBooks).Methods("GET")
+	r.HandleFunc("/books/{id}", handleDeleteBook).Methods("DELETE")
 
    // Ensure database is closed on program exit
     CloseDatabaseOnProgramExit()
@@ -57,24 +60,7 @@ func CloseDatabaseOnProgramExit() {
 	}()
 }
 
-func bookHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		handleGetBooks(w, r)
 
-	case "POST":
-		handlePostBook(w, r)
-
-	case "PUT":
-		handlePutBook(w, r)
-
-	case "DELETE":
-		handleDeleteBook(w, r)
-
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
-}
 
 func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 	//GET http://localhost:8080/books
