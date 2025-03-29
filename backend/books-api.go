@@ -14,6 +14,7 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq" // PostgreSQL driver
+	"github.com/rs/cors"
 )
 
 var db *sql.DB
@@ -34,11 +35,11 @@ func main() {
 	r.Use(corsMiddleware)
 
 	r.HandleFunc("/books", handleGetBooks).Methods("GET")
-	r.HandleFunc("/books", handlePostBook).Methods("POST")
-	r.HandleFunc("/books", handlePutBook).Methods("PUT")
+	r.HandleFunc("/books", handlePostBook).Methods("POST", "OPTIONS")
+	r.HandleFunc("/books", handlePutBook).Methods("PUT", "OPTIONS")
 	r.HandleFunc("/books/", handleGetBooks).Methods("GET")
 	r.HandleFunc("/books/{id}", handleGetBookById).Methods("GET")
-	r.HandleFunc("/books/{id}", handleDeleteBook).Methods("DELETE")
+	r.HandleFunc("/books/{id}", handleDeleteBook).Methods("DELETE", "OPTIONS")
 
    // Ensure database is closed on program exit
     CloseDatabaseOnProgramExit()
@@ -243,26 +244,16 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
-	db = openDbConnection()
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		allowedOrigins := map[string]bool{
-		    "http://localhost:3000": true,
-		}
-		origin := r.Header.Get("Origin")
-		if allowedOrigins[origin] {
-		    w.Header().Set("Access-Control-Allow-Origin", origin)
-		}
-		// Allow specific headers
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		// Allow specific methods
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		// Handle preflight requests
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+
+    c := cors.New(cors.Options{
+        AllowedOrigins:   []string{"http://localhost:3000"}, // Add allowed origins
+        AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // Specify allowed methods
+        AllowedHeaders:   []string{"Content-Type"}, // Add custom headers
+        AllowCredentials: true, // Allow credentials (like cookies)
+    })
+
+    // Wrap the next handler with CORS
+    return c.Handler(next)
 }
 
 func getBooks() ([]Book, error) {

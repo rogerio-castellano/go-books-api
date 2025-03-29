@@ -1,6 +1,6 @@
 # To-Do List
 
-- [ ] Add CORS Support
+- [ X ] Add CORS Support
 
   - Uncomment and configure the CORS headers to allow cross-origin requests if needed.
   - Alternatively, use the github.com/rs/cors package for better CORS handling.
