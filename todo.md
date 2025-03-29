@@ -5,11 +5,11 @@
   - Uncomment and configure the CORS headers to allow cross-origin requests if needed.
   - Alternatively, use the github.com/rs/cors package for better CORS handling.
 
-- [ ] Use a Persistent Storage
+- [ X ] Use a Persistent Storage
 
   - Replace the in-memory books slice with a database or file-based storage to persist data across server restarts.
 
-- [ ] Use HTTP Status Codes Properly
+- [ X ] Use HTTP Status Codes Properly
 
   - Ensure all responses use appropriate HTTP status codes (e.g., 201 Created for successful POST).
 
