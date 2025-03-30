@@ -30,6 +30,34 @@ func init() {
 	db = openDbConnection()
 }
 
+// func openMongoDbConnection() {
+// 		uri := "mongodb://books-mongo:27017"
+	
+// 	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	coll := client.Database("test").Collection("books")
+// 	filter := bson.D{{Key: "id", Value: 3}}
+// 	// Retrieves the first matching document
+
+// 	var result Book
+// 	err = coll.FindOne(context.TODO(), filter).Decode(&result)
+// 	// err = coll.FindOne(context.TODO(), bson.M{}).Decode(&result)
+// 	// Prints a message if no documents are matched or if any
+// 	// other errors occur during the operation
+// 	if err != nil {
+// 		if err == mongo.ErrNoDocuments {
+// 			return
+// 		}
+// 		panic(err)
+// 	}
+// fmt.Println(result)
+// }
+
+
+
 func main() {
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
@@ -41,8 +69,8 @@ func main() {
 	r.HandleFunc("/books/{id}", handleGetBookById).Methods("GET")
 	r.HandleFunc("/books/{id}", handleDeleteBook).Methods("DELETE", "OPTIONS")
 
-   // Ensure database is closed on program exit
-    CloseDatabaseOnProgramExit()
+	// Ensure database is closed on program exit
+	CloseDatabaseOnProgramExit()
 
 	fmt.Printf("Starting server at port 8080\n")
 	log.Fatal(http.ListenAndServe(":8080", r))
@@ -107,7 +135,6 @@ func handleGetBookById(w http.ResponseWriter, r *http.Request) {
 
 	_, _ = w.Write(responseJSON)
 }
-
 
 func handlePostBook(w http.ResponseWriter, r *http.Request) {
 	/* POST http://localhost:8080/books
@@ -245,15 +272,15 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 
 func corsMiddleware(next http.Handler) http.Handler {
 
-    c := cors.New(cors.Options{
-        AllowedOrigins:   []string{"http://localhost:3000"}, // Add allowed origins
-        AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // Specify allowed methods
-        AllowedHeaders:   []string{"Content-Type"}, // Add custom headers
-        AllowCredentials: true, // Allow credentials (like cookies)
-    })
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},                   // Add allowed origins
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // Specify allowed methods
+		AllowedHeaders:   []string{"Content-Type"},                            // Add custom headers
+		AllowCredentials: true,                                                // Allow credentials (like cookies)
+	})
 
-    // Wrap the next handler with CORS
-    return c.Handler(next)
+	// Wrap the next handler with CORS
+	return c.Handler(next)
 }
 
 func getBooks() ([]Book, error) {
@@ -306,7 +333,7 @@ func insertBook(book Book) (int, error) {
 func updateBook(book Book) error {
 	query := `UPDATE books SET title = $1, author = $2, pages = $3 WHERE id = $4`
 	_, err := db.Exec(query, book.Title, book.Author, book.Pages, book.Id)
-	
+
 	return err
 }
 
@@ -317,7 +344,7 @@ func deleteBook(id int) error {
 }
 
 func openDbConnection() *sql.DB {
-	if(db != nil && !isDBClosed(db)) {
+	if db != nil && !isDBClosed(db) {
 		return db
 	}
 
@@ -344,14 +371,14 @@ func openDbConnection() *sql.DB {
 }
 
 func isDBClosed(db *sql.DB) bool {
-    err := db.Ping()
-    if err != nil {
-        if err == sql.ErrConnDone {
-            return true
-        }
-        fmt.Printf("An error occurred: %v\n", err)
-    } 
-    return false
+	err := db.Ping()
+	if err != nil {
+		if err == sql.ErrConnDone {
+			return true
+		}
+		fmt.Printf("An error occurred: %v\n", err)
+	}
+	return false
 }
 
 func validateBook(book Book) bool {

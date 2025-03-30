@@ -56,7 +56,7 @@ services:
       - books-network
 
   pgadmin:
-    container_name: pgadmin
+    container_name: books-pgadmin
     image: dpage/pgadmin4:latest
     environment:
       - PGADMIN_DEFAULT_EMAIL=example@example.com
@@ -71,6 +71,17 @@ services:
     networks:
       - books-network
 
+  mongodb:
+    container_name: books-mongo
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - books-network
+
 networks:
   books-network:
     driver: bridge
@@ -78,3 +89,4 @@ networks:
 volumes:
   pgdata:
   pgadmin:
+  mongo-data:
