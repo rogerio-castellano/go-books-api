@@ -84,13 +84,25 @@ services:
 
   rabbitmq:
     container_name: books-rabbitmq
-    image: rabbitmq:4.1-rc-management
+    image: rabbitmq:4.1-rc-management-alpine
     ports:
       - 5672:5672
       - 15672:15672
     volumes:
       - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
       - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - books-network
+
+  cache:
+    container_name: books-redis
+    image: redis:8.0-M04-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes:
+      - cache:/data
     networks:
       - books-network
 
@@ -102,3 +114,5 @@ volumes:
   pgdata:
   pgadmin:
   mongo-data:
+  cache:
+    driver: local
