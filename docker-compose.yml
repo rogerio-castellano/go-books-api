@@ -82,6 +82,18 @@ services:
     networks:
       - books-network
 
+  rabbitmq:
+    container_name: books-rabbitmq
+    image: rabbitmq:4.1-rc-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - books-network
+
 networks:
   books-network:
     driver: bridge
