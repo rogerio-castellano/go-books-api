@@ -12,6 +12,7 @@ services:
       - db
       - mongodb
       - rabbitmq
+      - cache
 
   nginx:
     build:
@@ -101,7 +102,7 @@ services:
 
   cache:
     container_name: books-redis
-    image: redis:8.0-M04-alpine
+    image: redis:latest
     restart: always
     ports:
       - "6379:6379"

@@ -129,6 +129,59 @@ func init() {
 //     return nil // This will not be reached due to log.Fatalf, but is included for completeness.
 // }
 
+// func setAndGetRedisKey() {
+// 	retries := 5             // Number of retry attempts
+// 	delay := 2 * time.Second // Delay between attempts
+
+// 	client := connectToRedis(retries, delay)
+// 	defer client.Close()
+
+// 	ctx := context.Background()
+
+// 	err := client.Set(ctx, "foo", "bar", 0).Err()
+// 	if err != nil {
+// 		fmt.Println(10)
+// 		panic(err)
+// 	}
+
+// 	val, err := client.Get(ctx, "foo").Result()
+// 	if err != nil {
+// 		fmt.Println(20)
+// 		panic(err)
+// 	}
+// 	fmt.Println("foo", val)
+// }
+
+// func connectToRedis(retries int, delay time.Duration) *redis.Client {
+//     var client *redis.Client
+//     var err error
+
+//     for i := 1; i <= retries; i++ {
+//         // Initialize Redis client
+//         client = redis.NewClient(&redis.Options{
+//             Addr:     "books-redis:6379",
+//             Password: "eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81", // No password set
+//             DB:       0,                                  // Use default DB
+//             Protocol: 2,                                  // Connection protocol
+//         })
+
+//         // Test connection using PING
+//         ctx := context.Background()
+//         _, err = client.Ping(ctx).Result()
+
+//         if err == nil {
+//             fmt.Printf("Successfully connected to Redis on attempt %d\n", i)
+//             return client
+//         }
+
+//         log.Printf("Failed to connect to Redis (attempt %d/%d): %v\n", i, retries, err)
+//         time.Sleep(delay) // Wait before retrying
+//     }
+
+//     log.Fatalf("Exceeded maximum retries (%d). Redis connection failed.", retries)
+//     return nil // Will not be reached due to log.Fatalf
+// }
+
 func main() {
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
