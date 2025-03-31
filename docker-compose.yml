@@ -10,6 +10,8 @@ services:
       - "8080:8080"
     depends_on:
       - db
+      - mongodb
+      - rabbitmq
 
   nginx:
     build:
@@ -88,6 +90,9 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
     volumes:
       - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
       - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
