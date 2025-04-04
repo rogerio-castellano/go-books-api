@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -151,8 +152,20 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 				"Pages" : 400
 			}
 	*/
+	var err error
+
+	// Decode the request body into a map to retrieve only the keys that are present in the request body
+	var rawBody map[string]json.RawMessage
+	err = json.NewDecoder(r.Body).Decode(&rawBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	rawBody = normalizeKeysToLowercase(&rawBody)
+
 	var bookToUpdate Book
-	err := json.NewDecoder(r.Body).Decode(&bookToUpdate)
+	bodyBytes, _ := json.Marshal(rawBody)
+	err = json.Unmarshal(bodyBytes, &bookToUpdate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -168,15 +181,16 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if bookToUpdate.Title != "" {
+	// Update only the fields that are present in the request body, keeping the existing values unchanged for the others
+	if _, exists := rawBody["title"]; exists {
 		book.Title = bookToUpdate.Title
 	}
 
-	if bookToUpdate.Author != "" {
+	if _, exists := rawBody["author"]; exists {
 		book.Author = bookToUpdate.Author
 	}
 
-	if bookToUpdate.Pages != 0 {
+	if _, exists := rawBody["pages"]; exists {
 		book.Pages = bookToUpdate.Pages
 	}
 
@@ -197,12 +211,19 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set the appropriate headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	// Write the JSON response
 	_, _ = w.Write(responseJSON)
+}
+
+func normalizeKeysToLowercase(rawBody *map[string]json.RawMessage) map[string]json.RawMessage {
+	var result = make(map[string]json.RawMessage)
+	for k, v := range *rawBody {
+		result[strings.ToLower(k)] = v
+	}
+	return result
 }
 
 func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
@@ -244,7 +265,6 @@ func corsMiddleware(next http.Handler) http.Handler {
 		AllowCredentials: true,                                                // Allow credentials (like cookies)
 	})
 
-	// Wrap the next handler with CORS
 	return c.Handler(next)
 }
 
@@ -365,9 +385,3 @@ func CloseDatabaseOnProgramExit() {
 		os.Exit(0) // Gracefully exit
 	}()
 }
-
-// func failOnError(err error, msg string) {
-// 	if err != nil {
-// 		log.Panicf("%s: %s", msg, err)
-// 	}
-// }

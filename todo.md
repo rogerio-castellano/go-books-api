@@ -26,6 +26,7 @@
 - [ ] Improve architecture
 
   - Create services.
+  - Add ORM
 
 - [ ] Handle errors
 
