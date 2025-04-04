@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: example
       POSTGRES_HOST: books-db
       POSTGRES_PORT: 5432
-      POSTGRES_DB: postgres
+      POSTGRES_DATABASE: books_db
     networks:
       - books-network
     ports:
@@ -35,7 +35,8 @@ services:
       - api
 
   db:
-    image: postgres
+    build:
+      context: db
     container_name: books-db
     restart: always
     environment:
