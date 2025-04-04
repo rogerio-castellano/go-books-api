@@ -183,13 +183,12 @@ func init() {
 // }
 
 func main() {
-	r := mux.NewRouter()
+	r := mux.NewRouter().StrictSlash(true)
 	r.Use(corsMiddleware)
 
 	r.HandleFunc("/books", handleGetBooks).Methods("GET")
 	r.HandleFunc("/books", handlePostBook).Methods("POST", "OPTIONS")
 	r.HandleFunc("/books", handlePutBook).Methods("PUT", "OPTIONS")
-	r.HandleFunc("/books/", handleGetBooks).Methods("GET")
 	r.HandleFunc("/books/{id}", handleGetBookById).Methods("GET")
 	r.HandleFunc("/books/{id}", handleDeleteBook).Methods("DELETE", "OPTIONS")
 
