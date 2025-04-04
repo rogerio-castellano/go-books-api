@@ -4,6 +4,12 @@ services:
       context: backend
     container_name: books-api
     image: books-api
+    environment:
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_HOST: books-db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
     networks:
       - books-network
     ports:

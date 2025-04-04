@@ -473,7 +473,7 @@ func openDbConnection() *sql.DB {
 	}
 
 	var db *sql.DB
-	connStr := "postgres://postgres:example@books-db:5432/postgres?sslmode=disable&connect_timeout=10&application_name=books-api"
+	connStr := "postgres://" + os.Getenv("POSTGRES_USERNAME") + ":" + os.Getenv("POSTGRES_PASSWORD") + "@" + os.Getenv("POSTGRES_HOST") + ":" + os.Getenv("POSTGRES_PORT") + "/" + os.Getenv("POSTGRES_DATABASE") + "?sslmode=disable&connect_timeout=10&application_name=books-api"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v", err)
