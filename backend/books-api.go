@@ -525,8 +525,8 @@ func CloseDatabaseOnProgramExit() {
 	}()
 }
 
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Panicf("%s: %s", msg, err)
-	}
-}
+// func failOnError(err error, msg string) {
+// 	if err != nil {
+// 		log.Panicf("%s: %s", msg, err)
+// 	}
+// }
