@@ -15,11 +15,11 @@
 
 - [x] Set connection string and data repository in environment variables
 
-- [ ] Handle Edge Cases
+- [x] Handle Edge Cases
 
   - Handle cases like duplicate book IDs, invalid JSON payloads, and unsupported HTTP methods.
 
-- [ ] Improve Code Comments
+- [x] Improve Code Comments
 
   - Add meaningful comments to explain the purpose of each function and complex logic when it cannot be done through clean code.
 
