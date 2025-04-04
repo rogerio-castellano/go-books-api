@@ -76,24 +76,18 @@ func handleGetBookById(w http.ResponseWriter, r *http.Request) {
 
 	idParam := mux.Vars(r)["id"]
 
-	if idParam == "" {
-		http.Error(w, "The id was not provided.", http.StatusBadRequest)
+	id, err = strconv.Atoi(idParam)
+	if err != nil {
+		http.Error(w, "The provided id is invalid. Please ensure it is a positive integer.", http.StatusBadRequest)
 		return
-	} else {
-		id, err = strconv.Atoi(idParam)
-		if err != nil {
-			http.Error(w, "The provided id is invalid. Please ensure it is a positive integer.", http.StatusBadRequest)
-			return
-		}
-		book, ok := getBookById(id)
-		if !ok {
-			http.Error(w, "The requested book id could not be found.", http.StatusNotFound)
-			return
-		}
-
-		responseJSON, err = json.Marshal(book)
-
 	}
+	book, ok := getBookById(id)
+	if !ok {
+		http.Error(w, "The requested book id could not be found.", http.StatusNotFound)
+		return
+	}
+
+	responseJSON, err = json.Marshal(book)
 
 	if err != nil {
 		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
