@@ -161,6 +161,14 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	normalizeKeysToLowercase := func(rawBody *map[string]json.RawMessage) map[string]json.RawMessage {
+		var result = make(map[string]json.RawMessage)
+		for k, v := range *rawBody {
+			result[strings.ToLower(k)] = v
+		}
+		return result
+	}
 	rawBody = normalizeKeysToLowercase(&rawBody)
 
 	var bookToUpdate Book
@@ -216,14 +224,7 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 
 	// Write the JSON response
 	_, _ = w.Write(responseJSON)
-}
 
-func normalizeKeysToLowercase(rawBody *map[string]json.RawMessage) map[string]json.RawMessage {
-	var result = make(map[string]json.RawMessage)
-	for k, v := range *rawBody {
-		result[strings.ToLower(k)] = v
-	}
-	return result
 }
 
 func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
@@ -231,7 +232,7 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 	idParam := mux.Vars(r)["id"]
 
 	if idParam == "" {
-		http.Error(w, "", http.StatusBadRequest)
+		http.Error(w, "The id was not provided.", http.StatusBadRequest)
 		return
 	}
 
