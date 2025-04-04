@@ -1,23 +1,23 @@
 # To-Do List
 
-- [ X ] Add CORS Support
+- [x] Add CORS Support
 
   - Uncomment and configure the CORS headers to allow cross-origin requests if needed.
   - Alternatively, use the github.com/rs/cors package for better CORS handling.
 
-- [ X ] Use a Persistent Storage
+- [x] Use a Persistent Storage
 
   - Replace the in-memory books slice with a database or file-based storage to persist data across server restarts.
 
-- [ X ] Use HTTP Status Codes Properly
+- [x] Use HTTP Status Codes Properly
 
   - Ensure all responses use appropriate HTTP status codes (e.g., 201 Created for successful POST).
 
 - [ ] Set connection string and data repository in environment variables
 
-- [ ] Add MongoDB, RabbitMQ and Redis
+- [x] Add MongoDB, RabbitMQ and Redis
 
-- [ ] Add application in Azure
+- [ ] Deploy application to Azure
 
 - [ ] Add Unit Tests
 
@@ -46,4 +46,7 @@
 - [ ] Build containers health check
 
 - [ ] Handle errors
+
   - Handle main errors (including currently disregarded with \_ ) analyzing who (the caller or the called) should raise it, according to the situation (the caller can workaround it or not?)
+
+- [ ] Integrate MongoDB, RabbitMQ and Redis to the API, increasing the scope of the API
