@@ -5,7 +5,7 @@ import { BooksForm } from "./Components/BooksForm";
 import { BooksList } from "./Components/BooksList";
 import { useState, useEffect } from "react";
 
-const apiUrl: string = "http://localhost:8081/api/books";
+const apiUrl: string = process.env.REACT_APP_BOOKS_API_URL || "";
 
 function App() {
   const [books, setBooks] = useState<Book[]>([]);

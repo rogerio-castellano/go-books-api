@@ -16,23 +16,6 @@ services:
       - "8080:8080"
     depends_on:
       - db
-      - mongodb
-      - rabbitmq
-      - cache
-
-  nginx:
-    build:
-      context: nginx
-    container_name: books-nginx
-    image: books-nginx
-    volumes:
-      - ./nginx:/etc/nginx/conf.d/
-    networks:
-      - books-network
-    ports:
-      - "8081:80"
-    depends_on:
-      - api
 
   frontend:
     # image: node:23-alpine # Replace this with the actual React production build image if needed
@@ -80,44 +63,6 @@ services:
     networks:
       - books-network
 
-  mongodb:
-    container_name: books-mongo
-    image: mongo
-    restart: always
-    ports:
-      - 27017:27017
-    volumes:
-      - mongo-data:/data/db
-    networks:
-      - books-network
-
-  rabbitmq:
-    container_name: books-rabbitmq
-    image: rabbitmq:4.1-rc-management-alpine
-    ports:
-      - 5672:5672
-      - 15672:15672
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-    volumes:
-      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
-      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
-    networks:
-      - books-network
-
-  cache:
-    container_name: books-redis
-    image: redis:latest
-    restart: always
-    ports:
-      - "6379:6379"
-    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
-    volumes:
-      - cache:/data
-    networks:
-      - books-network
-
 networks:
   books-network:
     driver: bridge
@@ -125,6 +70,4 @@ networks:
 volumes:
   pgdata:
   pgadmin:
-  mongo-data:
-  cache:
     driver: local

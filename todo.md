@@ -31,7 +31,7 @@
 
   - Handle main errors (including currently disregarded with \_ ) analyzing who (the caller or the called) should raise it, according to the situation (the caller can workaround it or not?)
 
-- [ ] Remove all images that are no longer within the scope of the Docker Compose configuration, including Nginx
+- [x] Remove all images that are no longer within the scope of the Docker Compose configuration, including Nginx
 
 MOVE TO OTHER GITHUB REPOSITORIES TO REDUCE COGNITIVE LOAD ON A SINGLE REPOSITORY
 
