@@ -28,30 +28,10 @@
   - Create services.
   - Add ORM
 
-- [ ] Handle errors
+- [x] Handle errors
 
   - Handle main errors (including currently disregarded with \_ ) analyzing who (the caller or the called) should raise it, according to the situation (the caller can workaround it or not?)
 
 - [x] Remove all images that are no longer within the scope of the Docker Compose configuration, including Nginx
 
-MOVE TO OTHER GITHUB REPOSITORIES TO REDUCE COGNITIVE LOAD ON A SINGLE REPOSITORY
-
-- [ ] Add Unit Tests
-
-  - Write unit tests for each handler function to ensure correctness and prevent regressions.
-
-- [ ] Use Context for Request Scoping
-
-  - Use context.Context to handle request-scoped values like timeouts or user authentication.
-
-- [ ] Format and Lint Code
-
-  - Use gofmt and a linter like golangci-lint to ensure consistent formatting and catch potential issues.
-
-- [ ] Build containers health check
-
-- [ ] Integrate MongoDB, RabbitMQ and Redis to the API, increasing the scope of the API
-
-  - Relocate connection data to environment variables configured within the service in the Docker Compose file
-
-- [x] Add MongoDB, RabbitMQ and Redis, with connectivity tested
+- [ ] Document the repository, including out-of-the-scope features

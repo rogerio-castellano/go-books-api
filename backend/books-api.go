@@ -54,7 +54,12 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 	var responseJSON []byte
 	var err error
 
-	books, _ := getBooks()
+	books, err := getBooks()
+	if err != nil {
+		http.Error(w, "Error fetching books", http.StatusInternalServerError)
+		return
+	}
+
 	responseJSON, err = json.Marshal(books)
 
 	if err != nil {
@@ -66,7 +71,10 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	_, _ = w.Write(responseJSON)
+	_, err = w.Write(responseJSON)
+	if err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 func handleGetBookById(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +107,10 @@ func handleGetBookById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	_, _ = w.Write(responseJSON)
+	_, err = w.Write(responseJSON)
+	if err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 func handlePostBook(w http.ResponseWriter, r *http.Request) {
@@ -135,12 +146,14 @@ func handlePostBook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error encoding JSON", http.StatusBadRequest)
 		return
 	}
-	// Set the appropriate headers
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	// Write the JSON response
-	_, _ = w.Write(responseJSON)
+	_, err = w.Write(responseJSON)
+	if err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 func handlePutBook(w http.ResponseWriter, r *http.Request) {
@@ -222,9 +235,10 @@ func handlePutBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	// Write the JSON response
-	_, _ = w.Write(responseJSON)
-
+	_, err = w.Write(responseJSON)
+	if err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
@@ -330,7 +344,7 @@ func deleteBook(id int) error {
 }
 
 func openDbConnection() *sql.DB {
-	if db != nil && !isDBClosed(db) {
+	if isDBAvailable(db) {
 		return db
 	}
 
@@ -356,15 +370,20 @@ func openDbConnection() *sql.DB {
 	return db
 }
 
-func isDBClosed(db *sql.DB) bool {
+func isDBAvailable(db *sql.DB) bool {
+	if db == nil {
+		return false
+	}
+
+	// Check if the database connection is still alive
 	err := db.Ping()
 	if err != nil {
 		if err == sql.ErrConnDone {
-			return true
+			return false
 		}
 		fmt.Printf("An error occurred: %v\n", err)
 	}
-	return false
+	return true
 }
 
 func validateBook(book Book) bool {
